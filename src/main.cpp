@@ -143,6 +143,7 @@ void enter_torque_mode(void){
     //gpio.enable->write(1);
     controller.ovp_flag = 0;
     reset_foc(&controller);                                                     // Tesets integrators, and other control loop parameters
+    wait_us(1000);
     //wait(.001);
     controller.i_d_ref = 0;
     controller.i_q_ref = 0;                                                     // Current Setpoints
@@ -158,6 +159,7 @@ void calibrate(void){
     order_phases(&spi, &gpio, &controller, &prefs);                             // Check phase ordering
     calibrate(&spi, &gpio, &controller, &prefs);                                // Perform calibration procedure
     gpio.led->write(0);;                                                     // Turn off status LED
+    wait_us(50000);
     //wait(.05);
     R_NOMINAL = 0;
     state = INIT_TEMP_MODE;
@@ -170,6 +172,7 @@ void calibrate(void){
 void print_encoder(void){
     printf(" Mechanical Angle:  %f    Electrical Angle:  %f    Raw:  %d\n\r", spi.GetMechPosition(), spi.GetElecPosition(), spi.GetRawPosition());
     //printf("%d\n\r", spi.GetRawPosition());
+    wait_us(1000);
     //wait(.001);
     }
 
@@ -273,7 +276,7 @@ extern "C" void TIM1_UP_TIM10_IRQHandler(void) {
                     printf("OVP Triggered!\n\r");
                     }
                     */  
-
+                //printf("\n\r Else Torque Mode \n\r");
                 if((controller.timeout > CAN_TIMEOUT) && (CAN_TIMEOUT > 0)){
                     controller.i_d_ref = 0;
                     controller.i_q_ref = 0;
@@ -504,8 +507,10 @@ int main() {
     
 
     pc.baud(921600);                                                            // set serial baud rate
+    wait_us(10000);
     //wait(.01);
     pc.printf("\n\r\n\r HobbyKing Cheetah\n\r\n\r");
+    wait_us(10000);
     //wait(.01);
     printf("\n\r Debug Info:\n\r");
     printf(" Firmware Version: %s\n\r", VERSION_NUM);
@@ -524,6 +529,7 @@ int main() {
     int counter = 0;
     while(1) {
         //drv.print_faults();
+        wait_us(100000);
         //wait(.1);
         //printf("%.3f  %.3f\n\r" , observer.temperature, observer.q_in);
         if(controller.otw_flag){gpio.led->write(!gpio.led->read());}

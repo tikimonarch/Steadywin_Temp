@@ -227,6 +227,7 @@ void calibrate(PositionSensor *ps, GPIOStruct *gpio, ControllerStruct *controlle
                 }
             lut[ind] = (int) ((error_filt[i*NPP] - mean)*(float)(ps->GetCPR())/(2.0f*PI));
             printf("%d   %d   %d \n\r", i, ind, lut[ind]);
+            wait_us(1000);
             //wait(.001);
             }
             

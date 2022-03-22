@@ -64,6 +64,7 @@ void zero_current(int *offset_1, int *offset_2){                                
         TIM1->CCR2 = (PWM_ARR>>1)*(1.0f);
         TIM1->CCR1 = (PWM_ARR>>1)*(1.0f);
         ADC1->CR2  |= 0x40000000;                                               // Begin sample and conversion
+        wait_us(1000);
         //wait(.001);
         adc2_offset += ADC2->DR;
         adc1_offset += ADC1->DR;
@@ -97,6 +98,7 @@ void reset_foc(ControllerStruct *controller){
     controller->d_int = 0;
     controller->v_q = 0;
     controller->v_d = 0;
+    controller->fw_int = 0;
     controller->otw_flag = 0;
 
     }
@@ -265,7 +267,7 @@ void commutate(ControllerStruct *controller, ObserverStruct *observer, GPIOStruc
 void torque_control(ControllerStruct *controller){
     float torque_ref = controller->kp*(controller->p_des - controller->theta_mech) + controller->t_ff + controller->kd*(controller->v_des - controller->dtheta_mech);
     //float torque_ref = -.1*(controller->p_des - controller->theta_mech);
-    controller->i_q_ref = torque_ref/KT_OUT;    
+    controller->i_q_ref = torque_ref/(KT_OUT*GR);    
     controller->i_d_ref = 0.0f;
     }
  
