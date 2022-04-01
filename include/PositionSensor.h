@@ -7,6 +7,7 @@ public:
     virtual float GetMechPositionFixed() {return 0.0f;}
     virtual float GetElecPosition() {return 0.0f;}
     virtual float GetMechVelocity() {return 0.0f;}
+    virtual float GetOMechVelocity() {return 0.0f;}
     virtual float GetElecVelocity() {return 0.0f;}
     virtual void ZeroPosition(void) = 0;
     virtual int GetRawPosition(void) = 0;
@@ -23,8 +24,9 @@ public:
     virtual float GetMechPosition();
     virtual float GetElecPosition();
     virtual float GetMechVelocity();
+    virtual float GetOMechVelocity();
     virtual float GetElecVelocity();
-    virtual void ZeroPosition(void);
+    virtual void ZeroPosition();
     virtual void SetElecOffset(float offset);
     virtual int GetRawPosition(void);
     virtual int GetCPR(void);
@@ -49,6 +51,7 @@ public:
     virtual float GetMechPositionFixed();
     virtual float GetElecPosition();
     virtual float GetMechVelocity();
+    virtual float GetOMechVelocity();
     virtual float GetElecVelocity();
     virtual int GetRawPosition();
     virtual void ZeroPosition();
@@ -57,7 +60,7 @@ public:
     virtual int GetCPR(void);
     virtual void WriteLUT(int new_lut[128]);
 private:
-    float position, ElecPosition, ElecOffset, MechPosition, MechOffset, modPosition, oldModPosition, oldVel, velVec[40], MechVelocity, ElecVelocity, ElecVelocityFilt;
+    float position, ElecPosition, ElecOffset, MechPosition, MechOffset, modPosition, oldModPosition, oldVel, velVec[40], MechVelocity, OMechVelocity, ElecVelocity, ElecVelocityFilt;
     int raw, _CPR, rotations, old_counts, _ppairs, first_sample;
     SPI *spi;
     DigitalOut *cs;

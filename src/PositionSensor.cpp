@@ -1,8 +1,19 @@
 #include "mbed.h"
 #include "PositionSensor.h"
 #include "math_ops.h"
+#include "Kalman.h"
 //#include "offset_lut.h"
 //#include <math.h>
+
+float err_measure = 40;
+float q = 0.63;
+volatile float err_estimate = 10;
+volatile float current_estimate ;
+volatile float last_estimate;
+volatile float kalman_gain;
+volatile float diff;
+
+// Kalman kalman;
 
 PositionSensorAM5147::PositionSensorAM5147(int CPR, float offset, int ppairs){
     //_CPR = CPR;
@@ -36,7 +47,10 @@ void PositionSensorAM5147::Sample(float dt){
     //raw = spi->write(readAngleCmd);
     //raw &= 0x3FFF;   
     raw = spi->write(0);
-    raw = raw>>2;                                                             //Extract last 14 bits
+    // printf("raw value:  %d\n\r", (raw&3)); 
+    raw = raw>>2;
+    //printf("raw value:  %d\n\r", raw); 
+    // printf("raw value:  %d\n\r", (raw&3));                                                             //Extract last 14 bits
     GPIOA->ODR |= (1 << 15);
     int off_1 = offset_lut[raw>>7];
     int off_2 = offset_lut[((raw>>7)+1)%128];
@@ -85,6 +99,22 @@ void PositionSensorAM5147::Sample(float dt){
         }
     velVec[0] = vel;
     MechVelocity =  sum/((float)n);
+    OMechVelocity = MechVelocity;
+    // MechPosition = kalman.getAngle(MechPosition, MechVelocity, torque, dt);
+    // MechVelocity = kalman.getRate();
+    //MechVelocity =  vel;
+    kalman_gain = err_estimate/(err_estimate + err_measure);
+    current_estimate = last_estimate + kalman_gain * (MechVelocity - last_estimate);
+    MechVelocity = current_estimate;
+    diff = fabs(last_estimate-current_estimate);
+    if (diff<1){
+        err_estimate =  (1.0 - kalman_gain) *err_estimate + sqrt(diff)*q;
+    } else {
+        err_estimate =  (1.0 - kalman_gain) *err_estimate + pow(diff,2)*q;
+    }
+    last_estimate=current_estimate;
+    // err_estimate =  (1.0 - kalman_gain) *err_estimate + fabs(last_estimate-current_estimate)*q;
+    // printf(" L-C:  %f\n\r", (diff));
     ElecVelocity = MechVelocity*_ppairs;
     ElecVelocityFilt = 0.99f*ElecVelocityFilt + 0.01f*ElecVelocity;
     }
@@ -111,6 +141,10 @@ float PositionSensorAM5147::GetElecVelocity(){
 
 float PositionSensorAM5147::GetMechVelocity(){
     return MechVelocity;
+    }
+
+float PositionSensorAM5147::GetOMechVelocity(){
+    return OMechVelocity;
     }
 
 void PositionSensorAM5147::ZeroPosition(){
@@ -206,7 +240,7 @@ PositionSensorEncoder::PositionSensorEncoder(int CPR, float offset, int ppairs) 
     //ZTest->write(1);
     }
     
-void PositionSensorEncoder::Sample(float dt){
+void PositionSensorEncoder::Sample(float dt) {
     
     }
 
@@ -252,6 +286,10 @@ float PositionSensorEncoder::GetMechVelocity(){
     velVec[0] = out;
     return sum/(float)n;
     }
+
+float PositionSensorEncoder::GetOMechVelocity(){
+    return 0.0f;
+    }
     
 float PositionSensorEncoder::GetElecVelocity(){
     return _ppairs*GetMechVelocity();
@@ -270,7 +308,7 @@ void PositionSensorEncoder::ZeroEncoderCount(void){
         }
     }
 
-void PositionSensorEncoder::ZeroPosition(void){
+void PositionSensorEncoder::ZeroPosition(){
     
     }
     

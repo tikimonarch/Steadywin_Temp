@@ -3,6 +3,7 @@
 /// Hardware documentation can be found at build-its.blogspot.com
 /// Written for the STM32F446, but can be implemented on other STM32 MCU's with some further register-diddling
 /// Version for the TI DRV8323 Everything Chip
+/// Modified by Tikyi
 
 #define REST_MODE           0
 #define CALIBRATION_MODE    1
@@ -33,6 +34,9 @@ int __int_reg[256];                                                             
 #include "PreferenceWriter.h"
 #include "CAN_com.h"
 #include "DRV.h"
+#include "Kalman.h"
+//#include <Eigen/Dense>
+//using Eigen::MatrixXd;
  
 PreferenceWriter prefs(7);
 
@@ -54,14 +58,30 @@ DigitalOut drv_cs(PA_4);
 DRV832x drv(&drv_spi, &drv_cs);
 
 PositionSensorAM5147 spi(16384, 0.0, NPP);  
-
 volatile int count1 = 0;
 volatile int state = REST_MODE;
 volatile int state_change;
+volatile float originVelocity = spi.GetOMechVelocity();
+// new Kalman
+// Kalman kalman;
+// volatile float position;
+// volatile float velocity;
+
+// simple Kalman 
+// float err_measure = 40;
+// float err_estimate = 10;
+// float q = 5;
+// volatile float current_estimate ;
+// volatile float last_estimate;
+// volatile float kalman_gain;
+// volatile float velocity;
+// volatile float diff;
+
 
 void onMsgReceived() {
     //msgAvailable = true;
-    //printf("%d\n\r", rxMsg.id);
+    //printf("%d\n\r", rxMsg.id); 
+    
     can.read(rxMsg);  
     if((rxMsg.id == CAN_ID)){
         controller.timeout = 0;
@@ -83,7 +103,11 @@ void onMsgReceived() {
         else if(state == MOTOR_MODE){
             unpack_cmd(rxMsg, &controller);
             }
-        pack_reply(&txMsg, controller.theta_mech, controller.dtheta_mech, controller.i_q_filt*KT_OUT, observer.temperature);
+        // position = kalman.getAngle(controller.theta_mech, controller.dtheta_mech, controller.i_q_filt*KT_OUT, DT);
+        // velocity = kalman.getRate();
+        pack_Oreply(&txMsg, originVelocity, controller.dtheta_mech, controller.i_q_filt*KT_OUT, observer.temperature);
+        // pack_Oreply(&txMsg, originVelocity, controller.dtheta_mech, controller.i_q_filt*KT_OUT, observer.temperature);
+        // pack_reply(&txMsg, controller.theta_mech, controller.dtheta_mech, controller.i_q_filt*KT_OUT, observer.temperature);
         can.write(txMsg);
         }
     
@@ -189,16 +213,18 @@ extern "C" void TIM1_UP_TIM10_IRQHandler(void) {
         //for (delay = 0; delay < 55; delay++);
         
         spi.Sample(DT);                                                           // sample position sensor
+        
         /*
         if(count < 10){printf("%d\n\r", spi.GetRawPosition());}
         count ++;
-        */        
+        */       
         controller.adc2_raw = ADC2->DR;                                         // Read ADC Data Registers
         controller.adc1_raw = ADC1->DR;
         controller.adc3_raw = ADC3->DR;
         controller.theta_elec = spi.GetElecPosition();
         controller.theta_mech = (1.0f/GR)*spi.GetMechPosition();
-        controller.dtheta_mech = (1.0f/GR)*spi.GetMechVelocity();  
+        controller.dtheta_mech = (1.0f/GR)*spi.GetMechVelocity();
+        originVelocity = (1.0f/GR)*spi.GetOMechVelocity();
         controller.dtheta_elec = spi.GetElecVelocity();
         controller.v_bus = 0.95f*controller.v_bus + 0.05f*((float)controller.adc3_raw)*V_SCALE; //filter the dc link voltage measurement
         
@@ -518,7 +544,6 @@ int main() {
     printf(" Position Sensor Electrical Offset:   %.4f\n\r", E_OFFSET);
     printf(" Output Zero Position:  %.4f\n\r", M_OFFSET);
     printf(" CAN ID:  %d\n\r", CAN_ID);
-    
 
     TIM1->CR1 ^= TIM_CR1_UDIS;
 

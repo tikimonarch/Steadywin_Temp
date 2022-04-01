@@ -40,6 +40,21 @@ void pack_reply(CANMessage *msg, float p, float v, float t, float temperature){
     msg->data[7] = temp_int&0xFF;
     }
     
+void pack_Oreply(CANMessage *msg, float p, float v, float t, float temperature){
+    int p_int = float_to_uint(p, V_MIN, V_MAX, 12);
+    int v_int = float_to_uint(v, V_MIN, V_MAX, 12);
+    int t_int = float_to_uint(t, -T_MAX, T_MAX, 12);
+    int temp_int = float_to_uint(temperature, TEMP_MIN, TEMP_MAX, 16);
+    msg->data[0] = CAN_ID;
+    msg->data[1] = p_int>>8;
+    msg->data[2] = p_int&0xFF;
+    msg->data[3] = v_int>>4;
+    msg->data[4] = ((v_int&0xF)<<4) + (t_int>>8);
+    msg->data[5] = t_int&0xFF;
+    msg->data[6] = temp_int>>8;
+    msg->data[7] = temp_int&0xFF;
+    }
+    
 /// CAN Command Packet Structure ///
 /// 16 bit position command, between -4*pi and 4*pi
 /// 12 bit velocity command, between -30 and + 30 rad/s
