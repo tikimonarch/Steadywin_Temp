@@ -4,7 +4,7 @@ This firmware is modified from Ben Katz's original motor firmware code which can
 ## Setting up PlatformIO
 PlatformIO is a compiler that is an extension built on top of the Visual Studio Code. Thus, to setup PlatformIO install Visual Studio Code first then search for the PlatformIO extension.
 
-<img src="https://github.com/tikimonarch/Steadywin_Temp/blob/main/Pic/setting_up_1.png" width="75%" height="75%">
+<img src="https://github.com/tikimonarch/Steadywin_Temp/blob/master/Pic/setting_up_1.png" width="75%" height="75%">
 
 ## Changing Flash Sector that stores motor settings
 
